@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1584069221499.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "C88D54C4",
+    "lastKnownWriteTime" : 1584077411,
+    "last_content_update" : 1584077411387,
+    "path" : "C:/US Drive/MSBA/GitHub.io/CoronaOutbreakAnalysis/R/00_inspect_data_files.R",
+    "project_path" : "R/00_inspect_data_files.R",
+    "properties" : {
+        "cursorPosition" : "40,20",
+        "scrollLine" : "31",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_source"
+}

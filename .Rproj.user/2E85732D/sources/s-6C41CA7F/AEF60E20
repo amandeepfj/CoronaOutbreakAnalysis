@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1584077272872.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "AEF60E20",
+    "lastKnownWriteTime" : 1584077261,
+    "last_content_update" : 1584077272872,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "A4F02C79",
+        "caption" : "df_corona %>% arrange(ObservationDate) %>% group_by(ObservationDate, ",
+        "contentUrl" : "grid_resource/gridviewer.html?env=_rs_no_env&obj=&cache_key=A4F02C79",
+        "displayedObservations" : "2202",
+        "environment" : "_rs_no_env",
+        "expression" : "df_corona %>% arrange(ObservationDate) %>% group_by(ObservationDate,      CountryOrRegion) %>% summarise(Confirmed = sum(Confirmed)) %>%      ungroup() %>% mutate(new_confirmed_today = c(first(Confirmed),      diff(Confirmed)))",
+        "object" : "",
+        "preview" : "0",
+        "totalObservations" : "2202",
+        "variables" : "4"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 9,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

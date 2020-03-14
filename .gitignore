@@ -6,3 +6,6 @@
 R/lst_countries.rds
 R/rsconnect/*
 kaggle.json
+R/Shiny App/models/*
+R/Shiny App/rsconnect/shinyapps.io/amandeepfj/CoronaVirusForecast.dcf
+R/Shiny App/lst_countries.rds

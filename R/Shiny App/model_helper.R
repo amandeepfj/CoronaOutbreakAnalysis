@@ -4,7 +4,7 @@
 ##
 ## Purpose of script:
 ##
-## Author: Jason Aizklans, Amandeep Jiddewar
+## Author: Amandeep Jiddewar
 ##
 ## Date Created: 2020-03-13
 ##
@@ -16,9 +16,11 @@ get_rate_of_change <- function(model){
   round(model$history$cap_scaled %>% pluck(1), digits = 2)
 }
 
+
 get_cap <- function(model){
   first(model$history$cap)
 }
+
 
 get_df_actual_vs_predicted <- function(model, forecast){
   as_tibble(
@@ -29,3 +31,4 @@ get_df_actual_vs_predicted <- function(model, forecast){
       arrange(desc(Date))
     )
 }
+

@@ -65,9 +65,10 @@ fetch_dates <- format(fetch_dates,"%m-%d-%Y")
 df_corona_raw_to_append <- NULL
 
 for(temp_date in fetch_dates){
+  print(str_glue("Fetching data for {temp_date}...."))
   x <- read_csv(curl(str_glue({"{URL_PRE}{temp_date}.csv"})))
   
-  print(str_glue({"Date : {temp_date}, Rows : {nrow(x)}"}))
+  print(str_glue({"Fetch complete for - Date : {temp_date}, Rows : {nrow(x)}"}))
   
   x <- x %>% mutate(ObservationDate = as.Date(`Last Update`),
                     CountryOrRegion = `Country/Region`,
@@ -133,6 +134,14 @@ df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_
 same_names <- c("Czech Republic", "Czechia")
 df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_names[1]
 
+same_names <- c("Ivory Coast", "Cote d'Ivoire")
+df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_names[1]
+
+same_names <- c("French Guiana", "Guinea")
+df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_names[1]
+
+same_names <- c("St. Martin", "('St. Martin',)")
+df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_names[1]
 
 detect <- "Diamond Princess"
 df_corona <- df_corona %>% 
@@ -142,7 +151,12 @@ df_corona <- df_corona %>%
 ## Prophet Model ####
 ##----------------------------------------------------------------------------##
 
-get_forecast_model <- function(country = "India", df_corona){
+get_forecast_model <- function(country = "India", df_corona, forecast_variable = "Confirmed"){
+  
+  #country <- "Norway"
+  #forecast_variable <- "Deaths"
+  print(paste0("Creating ", forecast_variable," cases model for ", country, "..."))
+  last_y_var <- paste0(forecast_variable, "TillYesterDate")
   
   MIN_RECORDS_NEEDED <- 7
   LAST_N_TO_CONSIDER <- MIN_RECORDS_NEEDED
@@ -153,14 +167,15 @@ get_forecast_model <- function(country = "India", df_corona){
     group_by(ObservationDate, ProvinceOrState) %>% summarise_if(is.numeric, first) %>% ungroup() %>% 
     group_by(ObservationDate) %>% summarise_if(is.numeric, sum) %>% 
     select(ds = ObservationDate,
-           y = Confirmed,
-           last_y = ConfirmedTillYesterDate)
+           y = forecast_variable,
+           last_y = last_y_var)
   
   if(nrow(df) > MIN_RECORDS_NEEDED){
     
     today_count <- max(df$y)
     
-    df <- df %>% mutate(rate_of_change = y/last_y) %>% arrange(ds)
+    # Avoid divide by zero issue
+    df <- df %>% mutate(rate_of_change = y/(last_y + 0.0000001)) %>% arrange(ds)
     
     nth_highest <- 1
     
@@ -173,7 +188,8 @@ get_forecast_model <- function(country = "India", df_corona){
     
     #rate_of_change <- ifelse(rate_of_change <= 1, DEFAULT_RATE, rate_of_change) 
     
-    df$cap <- as.integer(today_count * rate_of_change)
+    cap <- as.integer(today_count * rate_of_change)
+    df$cap <- ifelse(cap > 0, cap, 1)
     
     m <- prophet(df, growth = "logistic", 
                 daily.seasonality = F, 
@@ -197,47 +213,61 @@ get_forecast <- function(model, nDays = 7){
 }
 
 
-lst_countries <- df_corona %>% arrange(desc(Confirmed)) %>% distinct(CountryOrRegion) %>% head(-10)
-
-#lst_countries <- as.tibble(c("Czech Republic"))
+lst_countries <- df_corona %>% arrange(desc(Confirmed)) %>% distinct(CountryOrRegion) %>% head(-20)
 
 countries_with_less_records <- c()
   
 for(i in 1:nrow(lst_countries)){
   country_name <- lst_countries[i, ] %>% pluck(1)
-  m <- get_forecast_model(country_name, df_corona)
-  if(!is.null(m)){
-    saveRDS(m, str_glue({"models/{country_name}.rds"}))
+  confirmed_cases_model <- get_forecast_model(country_name, df_corona)
+  if(!is.null(confirmed_cases_model)){
+    saveRDS(confirmed_cases_model, str_glue({"Shiny App/models/Confirmed_{country_name}.rds"}))
     
-    fcst <- get_forecast(m)
-    saveRDS(fcst, str_glue({"models/{country_name}_forecast.rds"}))
+    fcst <- get_forecast(confirmed_cases_model)
+    saveRDS(fcst, str_glue({"Shiny App/models/Confirmed_{country_name}_forecast.rds"}))
+    
+    
+    deaths_cases_model <- get_forecast_model(country_name, df_corona, "Deaths")
+    saveRDS(deaths_cases_model, str_glue({"Shiny App/models/Deaths_{country_name}.rds"}))
+    fcst <- get_forecast(deaths_cases_model)
+    saveRDS(fcst, str_glue({"Shiny App/models/Deaths_{country_name}_forecast.rds"}))
+    
+    recovered_cases_model <- get_forecast_model(country_name, df_corona, "Recovered")
+    saveRDS(recovered_cases_model, str_glue({"Shiny App/models/Recovered_{country_name}.rds"}))
+    fcst <- get_forecast(recovered_cases_model)
+    saveRDS(fcst, str_glue({"Shiny App/models/Recovered_{country_name}_forecast.rds"}))
+    
   }
   else{
     countries_with_less_records <- c(countries_with_less_records, country_name)
   }
 }
 
+
 lst_countries <- lst_countries %>% filter(!CountryOrRegion %in% countries_with_less_records)
 
-saveRDS(lst_countries, "lst_countries.rds")
+saveRDS(lst_countries, "Shiny App/lst_countries.rds")
 
-source("model_helper.R")
+source("Shiny App/model_helper.R")
 
-# country_name <- "Czech Republic"
+test_country_name <- lst_countries %>% pluck(1, 1)
+
+type <- "Deaths"
 # 
-# m2 <- readRDS(str_glue({"models/{country_name}.rds"}))
+ m2 <- readRDS(str_glue({"Shiny App/models/{type}_{test_country_name}.rds"}))
 # 
-# fcst <- readRDS(str_glue({"models/{country_name}_forecast.rds"}))
+ fcst <- readRDS(str_glue({"Shiny App/models/{type}_{test_country_name}_forecast.rds"}))
  
 # get_df_actual_vs_predicted(m2, fcst)
 # 
 # #get_population_of_country("CHN", df_corona)
 # 
-# plot(m2, fcst, plot_cap = T)
+ plot(m2, fcst, plot_cap = T)
+ dyplot.prophet(m2, fcst, uncertainty = T) 
 # 
 # #prophet_plot_components(m, fcst)
 # 
- dyplot.prophet(m2, fcst, uncertainty = T) 
+
 
 
 ##----------------------------------------------------------------------------##

@@ -27,10 +27,10 @@ lst_countries <- readRDS("lst_countries.rds") #%>% head(2)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-
+    title = "COVID-19 Forecast",
     titlePanel("Select Country"),
     selectInput("country", label = NULL,
-                choices = lst_countries, selected = "India"),
+                choices = lst_countries, selected = "Iran"),
     hr(),
     fluidRow(
         column(

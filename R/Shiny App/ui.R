@@ -29,9 +29,9 @@ lst_countries <- get_list_of_countries()
 # Define UI for application that draws a histogram
 fluidPage(
   
-  title = "COVID-19 Forecast",
+  title = "COVID-19 Cases",
   
-  titlePanel("COVID 19 cases"),
+  titlePanel("COVID 19 Cases"),
   
   HTML(
   str_glue({"The document shows country-wise confirmed, deaths, and recovered cases. 
@@ -44,7 +44,7 @@ fluidPage(
   and should not be taken as an authentic source. It does a pretty good job of predicting the 
   next 2-3 days but fails when it comes to looking far ahead in the future. 
   Here is a GitHub code for the reference. 
-  <a href='https://facebook.github.io/prophet/docs/quick_start.html#r-api'>forecasts</a>"})),
+  <a href='https://github.com/amandeepfj/CoronaOutbreakAnalysis/tree/master/R'>Code</a>"})),
   
   br(),br(),
   
@@ -124,5 +124,6 @@ fluidPage(
         </ul>"),
   
   hr(),
-  includeHTML("footer.html")
+  includeHTML("footer.html"),
+  br(),
 )

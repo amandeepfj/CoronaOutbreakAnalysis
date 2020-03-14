@@ -130,6 +130,10 @@ df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_
 same_names <- c("UK", "United Kingdom")
 df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_names[1]
 
+same_names <- c("Czech Republic", "Czechia")
+df_corona[df_corona$CountryOrRegion %in% same_names, "CountryOrRegion"] <- same_names[1]
+
+
 detect <- "Diamond Princess"
 df_corona <- df_corona %>% 
               mutate(CountryOrRegion = ifelse(!is.na(ProvinceOrState) & str_detect(ProvinceOrState, detect), detect, CountryOrRegion))
@@ -146,37 +150,40 @@ get_forecast_model <- function(country = "India", df_corona){
   
   df <- df_corona %>% 
     filter(str_detect(CountryOrRegion, country)) %>% 
+    group_by(ObservationDate, ProvinceOrState) %>% summarise_if(is.numeric, first) %>% ungroup() %>% 
     group_by(ObservationDate) %>% summarise_if(is.numeric, sum) %>% 
     select(ds = ObservationDate,
            y = Confirmed,
            last_y = ConfirmedTillYesterDate)
   
-  validate(
-    need(nrow(df) > MIN_RECORDS_NEEDED, 'Not enough data')
-  )
-  
-  today_count <- max(df$y)
-  
-  df <- df %>% mutate(rate_of_change = y/last_y) %>% arrange(ds)
-  
-  nth_highest <- 1
-  
-  rate_of_change <- df %>% 
-                      tail(LAST_N_TO_CONSIDER) %>% 
-                      pluck("rate_of_change") %>% 
-                      sort(partial = length(.) - nth_highest) %>% 
-                      .[length(.) - nth_highest]
-  
-  
-  #rate_of_change <- ifelse(rate_of_change <= 1, DEFAULT_RATE, rate_of_change) 
-  
-  df$cap <- as.integer(today_count * rate_of_change)
-  
-  m <- prophet(df, growth = "logistic", 
-              daily.seasonality = F, 
-              yearly.seasonality = F,
-              weekly.seasonality = T)
-  m
+  if(nrow(df) > MIN_RECORDS_NEEDED){
+    
+    today_count <- max(df$y)
+    
+    df <- df %>% mutate(rate_of_change = y/last_y) %>% arrange(ds)
+    
+    nth_highest <- 1
+    
+    rate_of_change <- df %>% 
+                        tail(LAST_N_TO_CONSIDER) %>% 
+                        pluck("rate_of_change") %>% 
+                        sort(partial = length(.) - nth_highest) %>% 
+                        .[length(.) - nth_highest]
+    
+    
+    #rate_of_change <- ifelse(rate_of_change <= 1, DEFAULT_RATE, rate_of_change) 
+    
+    df$cap <- as.integer(today_count * rate_of_change)
+    
+    m <- prophet(df, growth = "logistic", 
+                daily.seasonality = F, 
+                yearly.seasonality = F,
+                weekly.seasonality = T)
+    m
+  }
+  else{
+    NULL
+  }
 }
 
 
@@ -189,44 +196,48 @@ get_forecast <- function(model, nDays = 7){
   
 }
 
-get_rate_of_change <- function(model){
-  model$history$cap_scaled
-}
 
-get_cap <- function(model){
-  first(model$history$cap)
-}
+lst_countries <- df_corona %>% arrange(desc(Confirmed)) %>% distinct(CountryOrRegion) %>% head(-10)
 
+#lst_countries <- as.tibble(c("Czech Republic"))
 
-lst_countries <- df_corona %>% arrange(desc(Confirmed)) %>% distinct(CountryOrRegion) %>% head()
-
-saveRDS(lst_countries, "lst_countries.rds")
-
-lst_countries <- readRDS("lst_countries.rds")
-
+countries_with_less_records <- c()
+  
 for(i in 1:nrow(lst_countries)){
   country_name <- lst_countries[i, ] %>% pluck(1)
   m <- get_forecast_model(country_name, df_corona)
-  saveRDS(m, str_glue({"models/{country_name}.rds"}))
-  
-  fcst <- get_forecast(m)
-  saveRDS(fcst, str_glue({"models/{country_name}_forecast.rds"}))
+  if(!is.null(m)){
+    saveRDS(m, str_glue({"models/{country_name}.rds"}))
+    
+    fcst <- get_forecast(m)
+    saveRDS(fcst, str_glue({"models/{country_name}_forecast.rds"}))
+  }
+  else{
+    countries_with_less_records <- c(countries_with_less_records, country_name)
+  }
 }
 
+lst_countries <- lst_countries %>% filter(!CountryOrRegion %in% countries_with_less_records)
 
-country_name <- "Mainland China"
+saveRDS(lst_countries, "lst_countries.rds")
 
-m2 <- readRDS(str_glue({"models/{country_name}.rds"}))
+source("model_helper.R")
 
-fcst <- readRDS(str_glue({"models/{country_name}_forecast.rds"}))
-
-#get_population_of_country("CHN", df_corona)
-
-plot(m2, fcst, plot_cap = T)
-
-#prophet_plot_components(m, fcst)
-
-dyplot.prophet(m2, fcst, uncertainty = T) 
+# country_name <- "Czech Republic"
+# 
+# m2 <- readRDS(str_glue({"models/{country_name}.rds"}))
+# 
+# fcst <- readRDS(str_glue({"models/{country_name}_forecast.rds"}))
+ 
+# get_df_actual_vs_predicted(m2, fcst)
+# 
+# #get_population_of_country("CHN", df_corona)
+# 
+# plot(m2, fcst, plot_cap = T)
+# 
+# #prophet_plot_components(m, fcst)
+# 
+ dyplot.prophet(m2, fcst, uncertainty = T) 
 
 
 ##----------------------------------------------------------------------------##

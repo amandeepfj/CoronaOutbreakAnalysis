@@ -1,8 +1,5 @@
 ---
-title: "Forecast the corona virus outbreak"
-resource_files:
-- 00_inspect_data_files.R
-- input/novel-corona-virus-2019-dataset/covid_19_data.csv
+title: "Starter Template With Shiny"
 runtime: shiny
 output: html_document
 ---
@@ -11,44 +8,22 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r, results = "hide", message=FALSE, warning=FALSE, echo=FALSE}
+## Embedded Application
 
-source("00_inspect_data_files.R")
+It's also possible to embed an entire Shiny application within an R Markdown document using the `shinyAppDir` function. This example embeds a Shiny application located in another directory:
 
-```
-
-
-This R Markdown document is made interactive using Shiny. Unlike the more traditional workflow of creating static reports, you can now create documents that allow your readers to change the assumptions underlying your analysis and see the results immediately. 
-
-To learn more, see [Interactive Documents](http://rmarkdown.rstudio.com/authoring_shiny.html).
-
-## Inputs and Outputs
-
-You can embed Shiny inputs and outputs in your document. Outputs are automatically updated whenever inputs change.  This demonstrates how a standard R plot can be made interactive by wrapping it in the Shiny `renderPlot` function. The `selectInput` and `sliderInput` functions create the input widgets used to drive the plot.
-
-```{r eruptions, echo=FALSE}
-lst_countries <- df_corona %>% arrange(desc(Confirmed)) %>% distinct(CountryOrRegion)
-inputPanel(
-  selectInput("country", label = "Number of bins:",
-              choices = lst_countries, selected = "India")
+```{r tabsets, echo=FALSE}
+shinyAppDir(
+  ".",
+  options = list(
+    width = "100%", height = 700
+  )
 )
-
-get_reactive_model <- reactive({
-  get_forecast_model(input$country, df_corona)
-})
-
-get_reactive_forecast <- reactive({
-  get_forecast(get_reactive_model())
-})
-
-renderPlot({
-  prophet_plot_components(get_reactive_model(), get_reactive_forecast()) %>% withSpinner() 
-})
-
-renderDygraph({
-  dyplot.prophet(get_reactive_model(), get_reactive_forecast())
-})
 ```
 
+Note the use of the `height` parameter to determine how much vertical space the embedded application should occupy.
 
+You can also use the `shinyApp` function to define an application inline rather then in an external directory.
+
+In all of R code chunks above the `echo = FALSE` attribute is used. This is to prevent the R code within the chunk from rendering in the document alongside the Shiny components.
 

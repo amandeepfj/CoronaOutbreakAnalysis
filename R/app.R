@@ -1,32 +1,56 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
+## ---------------------------
+##
+## Script name: Corona Outbreak Shiny App
+##
+## Purpose of script:
+##
+## Author: Amandeep Jiddewar
+##
+## Date Created: 2020-03-14
+##
+## "We are drowning in information, while starving for wisdom - E. O. Wilson"
+##
+## ---------------------------
+
 
 library(tidyverse)
 library(prophet)
 library(shiny)
 library(dygraphs)
 library(shinycssloaders)
+library(shinydashboard)
+library(DT)
 
-lst_countries <- lst_countries <- readRDS("lst_countries.rds")
+source("model_helper.R")
+
+lst_countries <- readRDS("lst_countries.rds") #%>% head(2)
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
 
-    titlePanel("Select Country to forecast"),
-
-    # Sidebar with a slider input for number of bins 
-    inputPanel(
-        selectInput("country", label = "Number of bins:",
-                    choices = lst_countries, selected = "India")
+    titlePanel("Select Country"),
+    selectInput("country", label = NULL,
+                choices = lst_countries, selected = "India"),
+    hr(),
+    fluidRow(
+        column(
+            width = 4,
+            h2("Confirmed Cases"),
+            br(),
+            dataTableOutput("dt_predictions")
+        ),
+        column(
+            width = 8,
+            br(),
+            br(),
+            br(),
+            uiOutput("commentary_confirm"),
+            br(),
+            br(),
+            dygraphOutput("forecasts") %>% withSpinner(),
+            #plotOutput("forecast_components") %>% withSpinner(),
+        ),
     ),
-    dygraphOutput("forecasts") %>% withSpinner(),
-    plotOutput("forecast_components") %>% withSpinner(),
 )
 
 # Define server logic required to draw a histogram
@@ -38,6 +62,20 @@ server <- function(input, output) {
     
     get_reactive_forecast <- reactive({
         readRDS(str_glue({"models/{input$country}_forecast.rds"}))
+    })
+    
+    output$commentary_confirm <- renderUI({
+        h4(str_glue({"
+                The below graph shows the trend and next 7 days forecast of confirmed cases of the corona outbreak 
+                in {input$country}. The rate of increase is {get_rate_of_change(get_reactive_model())}.
+                The cap set when the model was trained is {get_cap(get_reactive_model())}
+                "}))
+    })
+    
+    output$dt_predictions <- renderDataTable({
+        DT::datatable(get_df_actual_vs_predicted(get_reactive_model(), get_reactive_forecast()),
+                      rownames = F, options = list(searching = FALSE, pageLength = 7, 
+                                                   lengthMenu = c(7, 10, 15, 20), scrollX = T))
     })
     
     output$forecast_components <- renderPlot({

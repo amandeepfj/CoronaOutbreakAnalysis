@@ -5,3 +5,4 @@
 .Rhistory
 R/lst_countries.rds
 R/rsconnect/*
+kaggle.json

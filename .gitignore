@@ -1,0 +1,7 @@
+
+.Rproj*
+/R/input/*
+/R/models/*
+.Rhistory
+R/lst_countries.rds
+R/rsconnect/*

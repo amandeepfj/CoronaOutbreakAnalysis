@@ -18,7 +18,7 @@ get_rate_of_change <- function(model){
 
 
 get_cap <- function(model){
-  first(model$history$cap)
+  round(first(model$history$cap), digits = 2)
 }
 
 
@@ -30,5 +30,12 @@ get_df_actual_vs_predicted <- function(model, forecast){
       mutate(Date = as.Date(Date)) %>% mutate_if(is.numeric, round) %>% 
       arrange(desc(Date))
     )
+}
+
+
+get_uncertainity_interval <- function(model){
+  str_glue({ "
+  {model$interval.width*100}%
+  "})
 }
 

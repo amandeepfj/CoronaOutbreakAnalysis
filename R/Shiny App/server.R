@@ -62,7 +62,7 @@ server <- function(input, output) {
   # })
   
   output$forecasts_confirmed <- renderDygraph({
-    dyplot.prophet(get_confirmed_cases_models(),
+    get_dygraph_to_plot(get_confirmed_cases_models(),
                    get_confirmed_cases_forecast())
   })
   
@@ -83,7 +83,7 @@ server <- function(input, output) {
   })
   
   output$forecasts_deaths <- renderDygraph({
-    dyplot.prophet(get_deaths_cases_models(),
+    get_dygraph_to_plot(get_deaths_cases_models(),
                    get_deaths_cases_forecast())
   })
   
@@ -104,7 +104,7 @@ server <- function(input, output) {
   })
   
   output$forecasts_recovered <- renderDygraph({
-    dyplot.prophet(get_recovered_cases_models(),
+    get_dygraph_to_plot(get_recovered_cases_models(),
                    get_recovered_cases_forecast())
   })
 }

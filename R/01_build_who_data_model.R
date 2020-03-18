@@ -178,15 +178,15 @@ for(i in 1:nrow(lst_countries)){
   deaths_cases_model <- get_forecast_model_who_data(who_df, country, "Deaths")
   deaths_cases_fcst <- get_forecast(deaths_cases_model)
   
-  saveRDS(confirmed_cases_model, str_glue({"Shiny App/models/Confirmed_{country}.rds"}))
-  saveRDS(deaths_cases_model, str_glue({"Shiny App/models/Deaths_{country}.rds"}))
+  saveRDS(confirmed_cases_model, str_glue({"{here::here()}/R/Shiny App/models/Confirmed_{country}.rds"}))
+  saveRDS(deaths_cases_model, str_glue({"{here::here()}/R/Shiny App/models/Deaths_{country}.rds"}))
   
-  saveRDS(confirmed_cases_fcst, str_glue({"Shiny App/models/Confirmed_{country}_forecast.rds"}))
-  saveRDS(deaths_cases_fcst, str_glue({"Shiny App/models/Deaths_{country}_forecast.rds"}))
+  saveRDS(confirmed_cases_fcst, str_glue({"{here::here()}/R/Shiny App/models/Confirmed_{country}_forecast.rds"}))
+  saveRDS(deaths_cases_fcst, str_glue({"{here::here()}/R/Shiny App/models/Deaths_{country}_forecast.rds"}))
   
 }
 
-saveRDS(lst_countries, "Shiny App/lst_countries.rds")
+saveRDS(lst_countries, str_glue({"{here::here()}/R/Shiny App/lst_countries.rds"}))
 
 ##----------------------------------------------------------------------------##
 ## Code sandbox section  ####
@@ -209,3 +209,12 @@ plot(model, fcst, plot_cap = T)
 dyplot.prophet(model, fcst, ylab = "Number of people") %>%
   dyOptions(drawPoints = TRUE, pointSize = 2) %>%
   dyLegend(show = "always", hideOnMouseOut = FALSE, width = 500)
+
+
+##----------------------------------------------------------------------------##
+## Deploy App to Shinyio ####
+##----------------------------------------------------------------------------##
+
+library(rsconnect)
+deployApp(str_glue({"{here::here()}/R/Shiny App"}), 
+          appName = "CoronaVirusForecast", forceUpdate = TRUE)

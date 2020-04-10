@@ -16,6 +16,18 @@ get_list_of_countries <- function(){
   readRDS("lst_countries.rds")
 }
 
+get_total_world_cases <- function(){
+  readRDS("df_total.rds")$Confirmed
+}
+
+get_total_world_deaths <- function(){
+  readRDS("df_total.rds")$Deaths
+}
+
+get_date_of_cases <- function(){
+  format(readRDS("df_total.rds")$ds, "%b %d, %Y")
+}
+
 
 get_forecasts_table_html <- function(df){
   DT::datatable(df, rownames = F, options = list(searching = FALSE, pageLength = 7, 

@@ -25,6 +25,10 @@ source("model_helper.R")
 source("utility.R")
 
 lst_countries <- get_list_of_countries()
+total_world_cases <- get_total_world_cases()
+total_world_deaths <- get_total_world_deaths()
+date_of_cases <- get_date_of_cases()
+
 
 # Define UI for application that draws a histogram
 fluidPage(
@@ -54,8 +58,16 @@ fluidPage(
   
   br(),br(),
   
-  selectInput("country", label = "Country",
-              choices = lst_countries, selected = "Iran"),
+ 
+  HTML(
+    str_glue({"<b>As of {date_of_cases}. The total number of confirmed cases in the world are 
+      {prettyNum(total_world_cases , big.mark=',', scientific=FALSE)}, and total number of deaths 
+      in the world are {prettyNum(total_world_deaths , big.mark=',', scientific=FALSE)}. </b>"})),
+  
+  br(),br(),
+  
+  selectInput("country", label = "Select country",
+              choices = lst_countries, selected = "US"),
   
   
   hr(),

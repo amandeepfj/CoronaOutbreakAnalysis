@@ -1,4 +1,3 @@
-
 .Rproj*
 /R/input/*
 /R/models/*
@@ -9,3 +8,6 @@ kaggle.json
 R/Shiny App/models/*
 R/Shiny App/rsconnect/shinyapps.io/amandeepfj/CoronaVirusForecast.dcf
 R/Shiny App/lst_countries.rds
+.Rhistory*
+.Rproj.user*
+R/Shiny App/df_total.rds

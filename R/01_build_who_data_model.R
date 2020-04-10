@@ -42,12 +42,49 @@ who_df <- x %>%
          Confirmed = total_cases,
          Deaths = total_deaths)
 
+max(who_df$ds)
+
+##----------------------------------------------------------------------------##
+## Data.world dataset ####
+##----------------------------------------------------------------------------##
+
+
+api_token <- read_file("api_token_data_world")
+
+dwapi::configure(auth_token = api_token)
+
+covid_dataset <- dwapi::get_dataset("covid-19-data-resource-hub", "covid-19-case-counts")
+
+sql_query <- "SELECT MAX(prep_flow_runtime)
+              FROM covid_19_cases"
+
+load_date <- dwapi::sql(covid_dataset$owner, covid_dataset$id, sql_query)$max
+
+load_date <- as.Date(load_date)
+
+sql_query <- str_glue("SELECT 
+                      date as ds,
+                      country_region as CountryOrRegion,
+                      case_type,
+                      sum(cases) as cases
+                      FROM covid_19_cases 
+                      WHERE prep_flow_runtime > '{load_date}'
+                      GROUP BY date, country_region, case_type")
+
+df_jhu <- dwapi::sql(covid_dataset$owner, covid_dataset$id, sql_query)
+
+df_covid <- df_jhu %>% pivot_wider(
+              names_from = case_type,
+              values_from = cases
+              )
+
+
 ##----------------------------------------------------------------------------##
 ## Modeling Functions ####
 ##----------------------------------------------------------------------------##
 
-get_df_with_cap <- function(who_df, country, forecast_variable){
-  df <- who_df %>% filter(CountryOrRegion == country) %>% arrange(ds) %>% 
+get_df_with_cap <- function(df_covid, country, forecast_variable){
+  df <- df_covid %>% filter(CountryOrRegion == country) %>% arrange(ds) %>% 
     mutate(y = get(forecast_variable)) %>% 
     select(ds, y, Confirmed, Deaths)
   
@@ -131,8 +168,8 @@ get_global_events <- function(country, forecast_variable){
   events
 }
 
-get_forecast_model_who_data <- function(who_df, country, forecast_variable){
-  df <- get_df_with_cap(who_df, country, forecast_variable)
+get_forecast_model_who_data <- function(df_covid, country, forecast_variable){
+  df <- get_df_with_cap(df_covid, country, forecast_variable)
   
   events <- get_global_events(country, forecast_variable)
   
@@ -159,11 +196,11 @@ get_forecast <- function(model, nDays = 7){
 ## Pilot tests  ####
 ##----------------------------------------------------------------------------##
 
-interested_in <- who_df %>% group_by(CountryOrRegion) %>% 
+interested_in <- df_covid %>% group_by(CountryOrRegion) %>% 
   summarise(count = n()) %>% ungroup() %>% 
   filter(count > 4 & CountryOrRegion != "World") %>% pluck("CountryOrRegion")
 
-lst_countries <- who_df %>% filter(CountryOrRegion %in% interested_in) %>% 
+lst_countries <- df_covid %>% filter(CountryOrRegion %in% interested_in) %>% 
   arrange(desc(Confirmed)) %>% distinct(CountryOrRegion)
 
 for(i in 1:nrow(lst_countries)){
@@ -172,11 +209,13 @@ for(i in 1:nrow(lst_countries)){
   
   print(paste0("Building model for ", country))
   
-  confirmed_cases_model <- get_forecast_model_who_data(who_df, country, "Confirmed")
+  confirmed_cases_model <- get_forecast_model_who_data(df_covid, country, "Confirmed")
   confirmed_cases_fcst <- get_forecast(confirmed_cases_model)
   
-  deaths_cases_model <- get_forecast_model_who_data(who_df, country, "Deaths")
+  deaths_cases_model <- get_forecast_model_who_data(df_covid, country, "Deaths")
   deaths_cases_fcst <- get_forecast(deaths_cases_model)
+  
+  country <- str_replace_all(country, "\\*", "")
   
   saveRDS(confirmed_cases_model, str_glue({"{here::here()}/R/Shiny App/models/Confirmed_{country}.rds"}))
   saveRDS(deaths_cases_model, str_glue({"{here::here()}/R/Shiny App/models/Deaths_{country}.rds"}))
@@ -188,15 +227,21 @@ for(i in 1:nrow(lst_countries)){
 
 saveRDS(lst_countries, str_glue({"{here::here()}/R/Shiny App/lst_countries.rds"}))
 
+df_total <- df_covid %>% filter(ds == max(df_covid$ds)) %>% group_by(ds) %>% 
+                summarise(Confirmed = sum(Confirmed),
+                          Deaths = sum(Deaths))
+
+saveRDS(df_total, str_glue({"{here::here()}/R/Shiny App/df_total.rds"}))
+
 ##----------------------------------------------------------------------------##
 ## Code sandbox section  ####
 ##----------------------------------------------------------------------------##
 
-country <- "South Korea"
+country <- "Italy"
 
 forecast_variable <- "Confirmed"
 
-model <- get_forecast_model_who_data(who_df, country, forecast_variable)
+model <- get_forecast_model_who_data(df_covid, country, forecast_variable)
 
 fcst <- get_forecast(model)
 
@@ -218,3 +263,6 @@ dyplot.prophet(model, fcst, ylab = "Number of people") %>%
 library(rsconnect)
 deployApp(str_glue({"{here::here()}/R/Shiny App"}), 
           appName = "CoronaVirusForecast", forceUpdate = TRUE)
+
+
+

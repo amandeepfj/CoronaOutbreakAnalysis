@@ -137,7 +137,7 @@ fluidPage(
   
   hr(),
   HTML("<ul><b>Data sources</b>
-          <li> <a>https://covid.ourworldindata.org/data/full_data.csv </a>
+          <li> <a>https://data.world/covid-19-data-resource-hub/covid-19-case-counts </a>
         </ul>"),
   
   hr(),
